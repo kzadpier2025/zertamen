@@ -187,7 +187,7 @@
           async function toggleCompleted(todo, event) {
             const id = todo.id;
             const completed = event.target.checked;
-            const newTodo = await patch("/api/todos/" + id, {
+            const newTodo = await patch("/api/reminders/" + id, {
               completed,
             });
 
@@ -201,7 +201,7 @@
           async function changeTitle(todo, event) {
             const id = todo.id;
             const title = event.target.value;
-            const newTodo = await patch("/api/todos/" + id, {
+            const newTodo = await patch("/api/reminders/" + id, {
               title,
             });
 
@@ -213,7 +213,7 @@
           }
 
           async function deleteTodo(todo) {
-            await remove("/api/todos/" + todo.id);
+            await remove("/api/reminders/" + todo.id);
 
             const index = todos.value.findIndex((t) => t.id === todo.id);
 
