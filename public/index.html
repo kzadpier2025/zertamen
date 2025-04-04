@@ -78,11 +78,11 @@
             >
               <input
                 type="checkbox"
-                :checked="todo.completed"
+                :checked="todo.important"
                 @change="toggleCompleted(todo, $event)"
               />
               <input
-                :value="todo.title"
+                :value="todo.content"
                 @keyup.enter="changeTitle(todo, $event)"
                 @blur="changeTitle(todo, $event)"
                 class="rounded px-2 py-1"
@@ -186,9 +186,9 @@
 
           async function toggleCompleted(todo, event) {
             const id = todo.id;
-            const important = event.target.checked;
+            const completed = event.target.checked;
             const newTodo = await patch("/api/reminders/" + id, {
-              important,
+              important: completed,
             });
 
             const index = todos.value.findIndex((todo) => todo.id === id);
@@ -200,9 +200,9 @@
 
           async function changeTitle(todo, event) {
             const id = todo.id;
-            const title = event.target.value;
+            const newtitle = event.target.value;
             const newTodo = await patch("/api/reminders/" + id, {
-              content,
+              content: newtitle,
             });
 
             const index = todos.value.findIndex((todo) => todo.id === id);

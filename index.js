@@ -39,8 +39,13 @@ app.post('/api/auth/login', (req, res) => {
 
 // Ruta para listar recordatorios
 app.get('/api/reminders', authenticate, (req, res) => {
-    res.status(200).json(reminders);
-});
+         res.status(200).json(reminders.map(reminder => ({
+             id: reminder.id,
+             content: reminder.content,
+             important: reminder.important,
+             createdAt: reminder.createdAt,
+         })));
+     });
 
 // Ruta para crear un recordatorio
 app.post('/api/reminders', authenticate, (req, res) => {
@@ -51,7 +56,7 @@ app.post('/api/reminders', authenticate, (req, res) => {
 
     const newReminder = {
         id: crypto.randomBytes(16).toString('hex'),
-        content,
+        content: content,
         important: important || false,
         createdAt: Date.now(),
     };
@@ -71,7 +76,12 @@ app.patch('/api/reminders/:id', authenticate, (req, res) => {
     reminder.content = content || reminder.content;
     reminder.important = important !== undefined ? important : reminder.important;
 
-    res.status(200).json(reminder);
+    res.status(200).json({
+        id: reminder.id,
+        content: reminder.content,
+        important: reminder.important, 
+        createdAt: reminder.createdAt,
+    });
 });
 
 // Ruta para borrar un recordatorio
