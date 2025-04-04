@@ -160,7 +160,7 @@
 
           async function afterLogin(loggedUser) {
             user.value = loggedUser;
-            todos.value = await get("/api/todos");
+            todos.value = await get("/api/reminders");
           }
 
           async function login() {
@@ -179,16 +179,16 @@
           }
 
           async function addTodo() {
-            const todo = await post("/api/reminders", { content: title.value, important: 0 });
+            const todo = await post("/api/reminders", { content: title.value, important: false });
             title.value = "";
             todos.value.push(todo);
           }
 
           async function toggleCompleted(todo, event) {
             const id = todo.id;
-            const completed = event.target.checked;
+            const important = event.target.checked;
             const newTodo = await patch("/api/reminders/" + id, {
-              completed,
+              important,
             });
 
             const index = todos.value.findIndex((todo) => todo.id === id);
@@ -202,7 +202,7 @@
             const id = todo.id;
             const title = event.target.value;
             const newTodo = await patch("/api/reminders/" + id, {
-              title,
+              content,
             });
 
             const index = todos.value.findIndex((todo) => todo.id === id);
