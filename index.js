@@ -2,6 +2,8 @@ const express = require('express');
 const crypto = require('crypto');
 const app = express();
 
+app.use(express.static('public'));
+
 // Simulación de base de datos en memoria
 let reminders = [];
 let users = [{ username: 'admin', password: 'password123', token: 'a46b51b70ccb24f9c7606fdbc69e942d63f5733ed9cec881ac62f80a837e957c8b1dd22998405bad6c9f35d7de16c16d' }];
