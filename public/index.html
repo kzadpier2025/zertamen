@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ToDo</title>
+    <title>Recordatorios</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css"
@@ -63,48 +63,72 @@
             <button @click="logout">Logout</button>
           </div>
 
-          <input
-            v-model="title"
-            class="mb-3 px-3 py-2 rounded border border-gray-200 w-full"
-            @keyup.enter="addTodo"
-            placeholder="Escribe la tarea a realizar..."
-          />
+					<form @submit.prevent="addReminder" class="mb-3">
+						<input
+							v-model="content"
+							class="mb-3 px-3 py-2 rounded border border-gray-200 w-full"
+							placeholder="Escribe un recordatorio..."
+							required
+							maxlength="120"
+						/>
+						<label>
+							Importante: 
+							<input v-model="important" type="checkbox" />
+						</label>
+					</form>
 
           <ul>
             <li
-              v-for="todo of todos"
-              :key="todo.id"
-              class="grid grid-cols-[20px_1fr_20px] gap-3 mb-3"
+              v-for="reminder of orderedReminders"
+              :key="reminder.id"
+              
             >
-              <input
-                type="checkbox"
-                :checked="todo.important"
-                @change="toggleCompleted(todo, $event)"
-              />
-              <input
-                :value="todo.content"
-                @keyup.enter="changeTitle(todo, $event)"
-                @blur="changeTitle(todo, $event)"
-                class="rounded px-2 py-1"
-              />
-
-              <button type="button" @click="deleteTodo(todo)">X</button>
+							<time>{{ new Date(reminder.createdAt).toLocaleString() }}</time>
+							<div class="grid grid-cols-[1fr_auto_20px] gap-3 mb-3">
+								<input
+									:value="reminder.content"
+									@keyup.enter="changeContent(reminder, $event)"
+									@blur="changeContent(reminder, $event)"
+									class="rounded px-2 py-1"
+								/>
+								<label>
+									Importante: 
+									<input
+										type="checkbox"
+										:checked="reminder.important"
+										@change="toggleImportant(reminder, $event)"
+									/>
+								</label>
+								<button type="button" @click="deleteReminder(reminder)">X</button>
+							</div>
             </li>
           </ul>
         </div>
       </transition>
     </div>
     <script>
-      const { createApp, ref, onMounted } = Vue;
+      const { createApp, ref, computed, onMounted } = Vue;
 
       createApp({
         setup() {
           const username = ref("");
           const password = ref("");
-          const title = ref("");
-          const todos = ref([]);
+          const content = ref("");
+					const important = ref(false);
+          const reminders = ref([]);
           const page = ref(0);
           const user = ref(null);
+					const orderedReminders = computed(() => {
+						return reminders.value.toSorted((a, b) => {
+							if (a.important && !b.important)  {
+								return -1;
+							}
+							else if (!a.important && b.important) {
+								return 1;
+							}
+							return a.createdAt - b.createdAt;
+						})
+					});
 
           function myfetch(route, method, body) {
             const options = {
@@ -160,7 +184,7 @@
 
           async function afterLogin(loggedUser) {
             user.value = loggedUser;
-            todos.value = await get("/api/reminders");
+            reminders.value = await get("/api/reminders");
           }
 
           async function login() {
@@ -173,52 +197,53 @@
           }
 
           async function logout() {
-            await post("/api/auth/logout");
+            //await post("/api/auth/logout");
             user.value = null;
             localStorage.removeItem("user");
           }
 
-          async function addTodo() {
-            const todo = await post("/api/reminders", { content: title.value, important: false });
-            title.value = "";
-            todos.value.push(todo);
+          async function addReminder() {
+            const reminder = await post("/api/reminders", { content: content.value, important: important.value });
+            content.value = "";
+						important.value = false;
+            reminders.value.push(reminder);
           }
 
-          async function toggleCompleted(todo, event) {
-            const id = todo.id;
-            const completed = event.target.checked;
-            const newTodo = await patch("/api/reminders/" + id, {
-              important: completed,
+          async function toggleImportant(reminder, event) {
+            const id = reminder.id;
+            const important = event.target.checked;
+            const newReminder = await patch("/api/reminders/" + id, {
+              important,
             });
 
-            const index = todos.value.findIndex((todo) => todo.id === id);
+            const index = reminders.value.findIndex((reminder) => reminder.id === id);
 
             if (index !== -1) {
-              todos.value[index] = newTodo;
+              reminders.value[index] = newReminder;
             }
           }
 
-          async function changeTitle(todo, event) {
-            const id = todo.id;
-            const newtitle = event.target.value;
-            const newTodo = await patch("/api/reminders/" + id, {
-              content: newtitle,
+          async function changeContent(reminder, event) {
+            const id = reminder.id;
+            const content = event.target.value;
+            const newReminder = await patch("/api/reminders/" + id, {
+              content,
             });
 
-            const index = todos.value.findIndex((todo) => todo.id === id);
+            const index = reminders.value.findIndex((reminder) => reminder.id === id);
 
             if (index !== -1) {
-              todos.value[index] = newTodo;
+              reminders.value[index] = newReminder;
             }
           }
 
-          async function deleteTodo(todo) {
-            await remove("/api/reminders/" + todo.id);
+          async function deleteReminder(reminder) {
+            await remove("/api/reminders/" + reminder.id);
 
-            const index = todos.value.findIndex((t) => t.id === todo.id);
+            const index = reminders.value.findIndex((t) => t.id === reminder.id);
 
             if (index !== -1) {
-              todos.value.splice(index, 1);
+              reminders.value.splice(index, 1);
             }
           }
 
@@ -231,15 +256,17 @@
           return {
             username,
             password,
-            title,
+            content,
+						important,
             user,
-            todos,
+            reminders,
+						orderedReminders,
             login,
             logout,
-            addTodo,
-            toggleCompleted,
-            changeTitle,
-            deleteTodo,
+            addReminder,
+            toggleImportant,
+            changeContent,
+            deleteReminder,
           };
         },
       }).mount("#app");
